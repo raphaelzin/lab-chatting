@@ -122,7 +122,7 @@ func (c *Client) readPump() {
 			textMessage.User = c.user
 			data, _ := json.Marshal(textMessage)
 			c.hub.redisBroadcast <- data
-			chattingredis.AddToStream(data)
+			chattingredis.AddMessage(data)
 		}
 	}
 }

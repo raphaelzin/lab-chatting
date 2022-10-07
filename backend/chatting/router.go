@@ -7,12 +7,14 @@ import (
 	"main/models"
 	"net/http"
 
+	redisInstance "main/redis"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
 func Init(r *mux.Router) {
-	chattingredis.Init()
+	redisInstance.Init()
 	setupChattingSocket(r)
 }
 
