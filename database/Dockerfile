@@ -1,0 +1,5 @@
+FROM postgres
+
+ENV POSTGRES_DB chatting
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD password
