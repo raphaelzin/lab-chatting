@@ -59,18 +59,24 @@ func (c *Client) writePump() {
 			}
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
+
 			if err != nil {
 				return
 			}
-			w.Write(message)
+
+			var arr []string = make([]string, 0)
+			arr = append(arr, string(message[:]))
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
+				// w.Write(newline)
+				// w.Write(<-c.send)
+				arr = append(arr, string(<-c.send))
 			}
 
+			data, _ := json.Marshal(arr)
+			w.Write(data)
 			if err := w.Close(); err != nil {
 				return
 			}
@@ -105,23 +111,20 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		baseMessage, err := models.Parse[models.BaseMessage](message)
+		rawMessage, err := models.Parse[models.RawMessage](message)
 
 		if err != nil {
 			c.send <- []byte(err.Error())
 			continue
 		}
 
-		switch baseMessage.Type {
+		switch rawMessage.Type {
 		case models.Text:
-			textMessage, e := models.Parse[models.TextMessage](message)
-			if e != nil {
-				c.send <- []byte(e.Error())
-				break
-			}
+			var textMessage models.TextMessage = *models.NewTextMessage(rawMessage)
 			textMessage.User = c.user
 			data, _ := json.Marshal(textMessage)
 			c.hub.redisBroadcast <- data
+
 			chattingredis.AddMessage(data)
 		}
 	}
