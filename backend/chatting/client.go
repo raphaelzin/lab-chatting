@@ -3,8 +3,8 @@ package chatting
 import (
 	"encoding/json"
 	"log"
-	"main/chatting/chattingredis"
 	"main/chatting/models"
+	chattingModels "main/chatting/models"
 	mainModels "main/models"
 	"time"
 
@@ -17,11 +17,6 @@ type Client struct {
 	conn *websocket.Conn
 	send chan []byte
 }
-
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
-)
 
 const (
 	// Time allowed to write a message to the peer.
@@ -96,8 +91,7 @@ func (c *Client) writePump() {
 // reads from this goroutine.
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.unregister <- c
-		c.conn.Close()
+		c.Unregister()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -124,8 +118,17 @@ func (c *Client) readPump() {
 			textMessage.User = c.user
 			data, _ := json.Marshal(textMessage)
 			c.hub.redisBroadcast <- data
-
-			chattingredis.AddMessage(data)
 		}
 	}
+}
+
+func (c *Client) Register() {
+	c.hub.register <- c
+	c.hub.redisBroadcast <- chattingModels.NewLoginMessage(c.user).AsData()
+}
+
+func (c *Client) Unregister() {
+	c.hub.unregister <- c
+	c.hub.redisBroadcast <- chattingModels.NewLogoutMessage(c.user).AsData()
+	c.conn.Close()
 }

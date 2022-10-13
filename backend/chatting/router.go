@@ -49,7 +49,7 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	log.Println(user.Username + " connected!")
 
 	client := &Client{user: user, hub: hub, conn: ws, send: make(chan []byte, 256)}
-	client.hub.register <- client
+	client.Register()
 
 	messages, _ := chattingredis.GetLastN(10)
 	for _, message := range messages {

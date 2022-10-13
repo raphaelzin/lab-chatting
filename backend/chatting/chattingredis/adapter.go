@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	constStream = "chatting-stream-1"
+	constStream  = "chatting-stream-1"
+	constChannel = "message-channel"
 )
 
 func AddMessage(data []byte) {
@@ -36,7 +37,7 @@ func GetLastN(n int64) ([][]byte, error) {
 }
 
 func PublishMessage(data []byte) {
-	err := redisInstance.Client.Publish("message-channel", string(data)).Err()
+	err := redisInstance.Client.Publish(constChannel, string(data)).Err()
 	if err != nil {
 		panic(err)
 	}

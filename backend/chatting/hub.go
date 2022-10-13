@@ -44,6 +44,7 @@ func (h *Hub) run() {
 				}
 			}
 		case message := <-h.redisBroadcast:
+			chattingredis.AddMessage(message)
 			chattingredis.PublishMessage(message)
 		}
 	}

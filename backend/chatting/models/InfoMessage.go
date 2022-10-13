@@ -1,8 +1,12 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
-	main_models "main/models"
+	"main/models"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type InfoMessageType string
@@ -23,7 +27,6 @@ func (t InfoMessageType) IsValid() bool {
 type InfoMessage struct {
 	Content  string          `json:"content" validate:"required"`
 	InfoType InfoMessageType `json:"info-type" validate:"required"`
-	User     main_models.User
 	BaseMessage
 }
 
@@ -32,4 +35,33 @@ func (m InfoMessage) validate() error {
 		return errors.New("invalid info message type")
 	}
 	return nil
+}
+
+func newBaseInfoMessage() InfoMessage {
+	message := new(InfoMessage)
+	message.Type = Info
+	message.Id = uuid.NewString()
+	message.Timestamp = time.Now().UTC().Format(time.RFC3339)
+
+	return *message
+}
+
+func NewLoginMessage(user models.User) InfoMessage {
+	message := newBaseInfoMessage()
+	message.InfoType = Login
+	message.Content = user.Username + " joined the party!"
+	return message
+}
+
+func NewLogoutMessage(user models.User) InfoMessage {
+	message := newBaseInfoMessage()
+	message.InfoType = Login
+	message.Content = user.Username + " is a quitter, he just left!"
+
+	return message
+}
+
+func (m InfoMessage) AsData() []byte {
+	data, _ := json.Marshal(m)
+	return data
 }
