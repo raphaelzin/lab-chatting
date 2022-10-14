@@ -2,11 +2,32 @@ version: "3"
 services:
   go-api:
     build: ./backend
-    ports:
-      - 8081:8081
+    tty: true
+    volumes:
+      - ./backend:/home/go/app
     depends_on:
       - redis
+    networks:
+      - backend
+    hostname: chatting
+
   redis:
     image: redis
+    volumes:
+      - ./cache:/data
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - go-api
     ports:
-      - 6379:6379
+      - "4000:4000"
+    networks:
+      - backend
+
+networks:
+  backend:

@@ -12,8 +12,9 @@ import (
 type InfoMessageType string
 
 const (
-	Login  InfoMessageType = "login"
-	Logout InfoMessageType = "logout"
+	Login   InfoMessageType = "login"
+	Logout  InfoMessageType = "logout"
+	Welcome InfoMessageType = "welcome"
 )
 
 func (t InfoMessageType) IsValid() bool {
@@ -58,6 +59,13 @@ func NewLogoutMessage(user models.User) InfoMessage {
 	message.InfoType = Login
 	message.Content = user.Username + " is a quitter, he just left!"
 
+	return message
+}
+
+func NewWelcomeMessage(token string) InfoMessage {
+	message := newBaseInfoMessage()
+	message.InfoType = Welcome
+	message.Content = token
 	return message
 }
 

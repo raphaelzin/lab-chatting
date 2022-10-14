@@ -7,6 +7,7 @@ import (
 	"main/models"
 	"net/http"
 
+	chattingModels "main/chatting/models"
 	redisInstance "main/redis"
 
 	"github.com/gorilla/mux"
@@ -49,11 +50,13 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	log.Println(user.Username + " connected!")
 
 	client := &Client{user: user, hub: hub, conn: ws, send: make(chan []byte, 256)}
+
 	client.Register()
+	// Send welcome message with random token
+	client.send <- chattingModels.NewWelcomeMessage(user.Id).AsData()
 
 	messages, _ := chattingredis.GetLastN(10)
 	for _, message := range messages {
-		log.Println("Message: " + string(message))
 		client.send <- message
 	}
 
@@ -63,7 +66,7 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 
 func validateUser(r *http.Request) (user models.User, err error) {
 	if header := r.Header["Username"]; len(header) != 0 {
-		return models.User{Username: header[0]}, nil
+		return *models.NewUser(header[0]), nil
 	}
 
 	cokie, err := r.Cookie("Username")
@@ -71,5 +74,5 @@ func validateUser(r *http.Request) (user models.User, err error) {
 		return user, errors.New("no user provided")
 	}
 
-	return models.User{Username: cokie.Value}, nil
+	return *models.NewUser(cokie.Value), nil
 }
