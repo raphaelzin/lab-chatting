@@ -52,6 +52,7 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	client := &Client{user: user, hub: hub, conn: ws, send: make(chan []byte, 256)}
 
 	client.Register()
+
 	// Send welcome message with random token
 	client.send <- chattingModels.NewWelcomeMessage(user.Id).AsData()
 

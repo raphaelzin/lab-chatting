@@ -45,7 +45,11 @@ func (h *Hub) run() {
 			}
 		case message := <-h.redisBroadcast:
 			log.Println("New message: " + string(message))
+
+			// Adds to stream for replay
 			chattingredis.AddMessage(message)
+
+			// Send to pub sub
 			chattingredis.PublishMessage(message)
 		}
 	}
