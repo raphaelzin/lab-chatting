@@ -7,8 +7,8 @@ import (
 	"main/models"
 	"net/http"
 
-	chattingModels "main/chatting/models"
 	redisInstance "main/redis"
+	userManager "main/user"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -22,7 +22,7 @@ func Init(r *mux.Router) {
 func setupChattingSocket(r *mux.Router) {
 	hub := newHub()
 	go hub.run()
-	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/chat/ws", func(w http.ResponseWriter, r *http.Request) {
 		wsEndpoint(w, r, hub)
 	})
 }
@@ -35,9 +35,9 @@ var upgrader = websocket.Upgrader{
 func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	user, err := validateUser(r)
 	if err != nil {
-		log.Println(r.Cookie("Username"))
+		log.Println("Unauthorized user, bye bye!")
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Missing user"))
+		w.Write([]byte("A user with this token could not be found"))
 		return
 	}
 
@@ -50,11 +50,7 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 	log.Println(user.Username + " connected!")
 
 	client := &Client{user: user, hub: hub, conn: ws, send: make(chan []byte, 256)}
-
 	client.Register()
-
-	// Send welcome message with random token
-	client.send <- chattingModels.NewWelcomeMessage(user.Id).AsData()
 
 	messages, _ := chattingredis.GetLastN(10)
 	for _, message := range messages {
@@ -66,14 +62,12 @@ func wsEndpoint(w http.ResponseWriter, r *http.Request, hub *Hub) {
 }
 
 func validateUser(r *http.Request) (user models.User, err error) {
-	if header := r.Header["Username"]; len(header) != 0 {
-		return *models.NewUser(header[0]), nil
+	if header := r.Header["Token"]; len(header) != 0 {
+		return userManager.GetUserWithToken(header[0])
 	}
-
-	cokie, err := r.Cookie("Username")
+	cokie, err := r.Cookie("Token")
 	if err != nil {
 		return user, errors.New("no user provided")
 	}
-
-	return *models.NewUser(cokie.Value), nil
+	return userManager.GetUserWithToken(cokie.Value)
 }

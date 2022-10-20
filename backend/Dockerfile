@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine AS builder
+FROM golang:1.19-alpine AS dev
 
 RUN apk update && apk add --no-cache git 
 
@@ -16,6 +16,6 @@ WORKDIR /home/go/app
 # COPY --from=builder /go/bin/build /go/bin/build
 # ENTRYPOINT ["/go/bin/build"]
 
-# CMD ["go", "run", "main.go"]
+CMD ["go", "run", "main.go"]
 
 EXPOSE 8082
