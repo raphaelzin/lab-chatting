@@ -1,10 +1,10 @@
 version: "3"
 services:
   go-api:
-    build: ./backend
+    image: chat-backend:1.0
     tty: true
     volumes:
-      - ./backend:/home/go/app
+      - ./backend:/build
     depends_on:
       - redis
     networks:
@@ -12,16 +12,14 @@ services:
     hostname: chatting
 
   redis:
-    image: redis
+    image: redis:7.0-alpine
     volumes:
       - ./cache:/data
     networks:
       - backend
 
   nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    image: chat-nginx:1.0
     depends_on:
       - go-api
     ports:
