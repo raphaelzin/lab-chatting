@@ -46,11 +46,6 @@ func (c *Client) writePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
-			log.Println("sending message to client " + c.user.Id + ": " + string(message))
-			if isSelfLogin(message) {
-				break
-			}
-
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -120,28 +115,18 @@ func (c *Client) readPump() {
 			var textMessage models.TextMessage = *models.NewTextMessage(rawMessage)
 			textMessage.User = c.user
 			data, _ := json.Marshal(textMessage)
-			c.hub.redisBroadcast <- data
+			c.hub.textMessageBroadcast <- data
 		}
 	}
 }
 
 func (c *Client) Register() {
-	c.hub.redisBroadcast <- chattingModels.NewLoginMessage(c.user).AsData()
+	c.hub.infoStream <- chattingModels.NewLoginMessage(c.user).AsData()
 	c.hub.register <- c
 }
 
 func (c *Client) Unregister() {
 	c.hub.unregister <- c
-	c.hub.redisBroadcast <- chattingModels.NewLogoutMessage(c.user).AsData()
+	c.hub.infoStream <- chattingModels.NewLogoutMessage(c.user).AsData()
 	c.conn.Close()
-}
-
-func isSelfLogin(data []byte) bool {
-	var message chattingModels.InfoMessage
-	err := json.Unmarshal(data, &message)
-	if err != nil || message.InfoType != chattingModels.Login {
-		return false
-	}
-
-	return true
 }

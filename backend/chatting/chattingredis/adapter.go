@@ -7,15 +7,25 @@ import (
 )
 
 const (
-	constStream  = "chatting-stream-1"
+	// Stream with past messages for recovery on login
+	constStream = "chatting-stream"
+
+	// Stream with all messages
+	constAuditStream = "chatting-audit-channel"
+
+	// Pub sub message-only channel
 	constChannel = "message-channel"
 )
 
 func AddMessage(data []byte) {
+	saveMessageToStream(data, constStream)
+}
+
+func saveMessageToStream(data []byte, channel string) {
 	strData := string(data)
 	rdata := make(map[string]interface{})
 	rdata["data"] = strData
-	cmd := redisInstance.Client.XAdd(&redis.XAddArgs{Stream: constStream, MaxLen: 10, Values: rdata})
+	cmd := redisInstance.Client.XAdd(&redis.XAddArgs{Stream: channel, MaxLen: 10, Values: rdata})
 	cmd.Result()
 }
 
@@ -36,13 +46,18 @@ func GetLastN(n int64) ([][]byte, error) {
 	return messages, nil
 }
 
-func PublishMessage(data []byte) {
-	err := redisInstance.Client.Publish(constChannel, string(data)).Err()
-	if err != nil {
-		panic(err)
+func PublishMessage(data []byte, isText bool) {
+	saveMessageToStream(data, constAuditStream)
+
+	if isText {
+		AddMessage(data)
+		err := redisInstance.Client.Publish(constChannel, string(data)).Err()
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
-func GetSubscriptionToChannel(channel string) *redis.PubSub {
-	return redisInstance.Client.Subscribe(channel)
+func GetSubscriptionToChannel() *redis.PubSub {
+	return redisInstance.Client.Subscribe(constChannel)
 }
