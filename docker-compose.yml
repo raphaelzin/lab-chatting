@@ -1,7 +1,7 @@
 version: "3"
 services:
   go-api:
-    image: chat-backend:1.0
+    image: raphaelpsouza/chatting-api:1.0
     tty: true
     volumes:
       - ./backend:/build
@@ -19,11 +19,22 @@ services:
       - backend
 
   nginx:
-    image: chat-nginx:1.0
+    image: raphaelpsouza/chatting-nginx:1.0
     depends_on:
       - go-api
     ports:
       - "4000:4000"
+    networks:
+      - backend
+
+  web:
+    image: raphaelpsouza/chatting-web:1.0
+    environment:
+      - REACT_APP_BASE_URL=localhost:4000
+    depends_on:
+      - go-api
+    ports:
+      - "3000:3000"
     networks:
       - backend
 
