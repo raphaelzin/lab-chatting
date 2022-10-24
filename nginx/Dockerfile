@@ -1,4 +1,4 @@
-FROM arm32v7/nginx:1.23-alpine
+FROM nginx:1.23-alpine
 
 RUN apk update && apk add --no-cache git
 
